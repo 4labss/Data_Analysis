@@ -6,19 +6,26 @@ import time
 def clean_directory(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
-        print(f"[+] Directory created successfully.")
+        print(f"[+] Directory created successfully: {directory}")
         return True  # Returning True as directory was just created, implying data download is necessary
     
     response = input("Do you want to clean the directory and download fresh data? (y/n): ").lower()
     if response == 'y':
         for filename in os.listdir(directory):
             filepath = os.path.join(directory, filename)
-            if os.path.exists(filepath):
-                os.unlink(filepath)
-        print(f"[+] Directory cleaned successfully.\n")
+            try:
+                if os.path.isfile(filepath):
+                    os.unlink(filepath)
+            except PermissionError as e:
+                print(f"Error deleting file {filepath}: {e}. File may be in use.")
+                return False  # Skip downloading if deletion fails
+            except OSError as e:
+                print(f"Error deleting file {filepath}: {e}")
+                return False  # Skip downloading if deletion fails
+        print(f"[+] Directory cleaned successfully: {directory}\n")
         return True  # Returning True as user chose to clean directory and download fresh data
     else:
-        print(f"[+] Directory cleaning skipped.\n")
+        print(f"[+] Directory cleaning skipped: {directory}\n")
         return False  # Returning False as user chose not to clean directory, implying existing data should be used
 
 def download_csv(country, year_1, year_2, type_data, directory):
@@ -43,7 +50,7 @@ def download_csv(country, year_1, year_2, type_data, directory):
                         print(f"Failed to download data for ID {province_ID} after {retries} attempts.")
                         continue
 
-            current_time = datetime.now().strftime("%a, %Y-%m-%d %H:%M:%S")
+            current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             filename = f'NOAA_ID_{province_ID}_{current_time}.csv'
             filepath = os.path.join(directory, filename)
 
